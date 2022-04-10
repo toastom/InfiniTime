@@ -19,6 +19,7 @@ namespace Pinetime {
       Paint,
       Paddle,
       Twos,
+      Worm,
       HeartRate,
       Navigation,
       StopWatch,
