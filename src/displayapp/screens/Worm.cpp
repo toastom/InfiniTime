@@ -2,8 +2,10 @@
 #include "displayapp/DisplayApp.h"
 #include "displayapp/LittleVgl.h"
 
-#include <iostream> // for cout debugging
-#include <cstdlib> // for rand()
+#include <iostream>
+#include <cstdlib>
+#include <FreeRTOS.h>
+#include <task.h>
 
 using namespace Pinetime::Applications::Screens;
 
@@ -61,10 +63,8 @@ Worm::Worm(Pinetime::Applications::DisplayApp *app, Pinetime::Components::Little
 		}
 	}
 
-	//TODO: refactor growWorm() later to work with grid
-
+	startTime = xTaskGetTickCount();
 	placeFood();
-
 	// Start game with three worm segments
 	growWorm(0, 0);
 	growWorm(0, 1);
@@ -83,10 +83,34 @@ Worm::~Worm()
 
 void Worm::Refresh()
 {
-	moveWorm();
-	lv_obj_report_style_mod(&bgStyle);
-	lv_obj_report_style_mod(&wormStyle);
-	lv_obj_report_style_mod(&foodStyle);
+
+    // Timer code stolen from Stopwatch app
+    TickType_t currentTime = xTaskGetTickCount();
+    TickType_t deltaTime = 0;
+    deltaTime = (currentTime - startTime) & 0xFFFFFFFF;
+
+
+    // TODO: Restart game on wall hit
+
+	if(worm.front().y <= 0 || worm.front().y >= GRID_ROW_MAX - 1 ||
+	   worm.front().x <= 0 || worm.front().x >= GRID_COL_MAX - 1) {
+        restartGame();
+	}
+
+    //
+    // Timer used so the worm doesn't move stupid fast
+    if(deltaTime > 200){ // millis
+        moveWorm();
+        lv_obj_report_style_mod(&bgStyle);
+        lv_obj_report_style_mod(&wormStyle);
+        lv_obj_report_style_mod(&foodStyle);
+        startTime = xTaskGetTickCount();
+    }
+
+
+
+	//moveWorm();
+
 
 	/* Eat food if worm head overlaps food
 	// Food repositioning happens in placeFood()
@@ -169,13 +193,20 @@ void Worm::placeFood()
 
 void Worm::moveWorm()
 {
-
-
     // Move worm
 	for(int i = 0; i < worm.size(); i++) {
+        // Underflow/overflow checking for borders
+        if(worm.at(i).y < 1){ worm.at(i).y = 1; }
+        if(worm.at(i).y > GRID_ROW_MAX - 1){ worm.at(i).y = GRID_ROW_MAX - 1; }
+        if(worm.at(i).x < 1){ worm.at(i).x = 1; }
+        if(worm.at(i).x > GRID_COL_MAX - 1){ worm.at(i).x = GRID_COL_MAX - 1; }
+
 		switch(worm.at(i).currentDir) {
 		case WORM_DIR::UP:
+            //std::cout << "Before decrement i: " << i << " worm y: " << worm.at(i).y << std::endl;
 			worm.at(i).y -= 1;
+			//std::cout << "After decrement i: " << i << " worm y: " << worm.at(i).y << std::endl;
+
 			// Set new position to the worm style
 			lv_table_set_cell_type(grid, worm.at(i).y, worm.at(i).x, 2);
 			// Set old position to the background style
@@ -198,21 +229,13 @@ void Worm::moveWorm()
 			break;
 		}
 	}
-
-	// TODO: Restart game on wall hit
-    std::cout << "Head x: " << worm.front().x << " Head y: " << worm.front().y << std::endl;
-	if(worm.front().y <= 0 || worm.front().y >= GRID_ROW_MAX ||
-	   worm.front().x <= 0 || worm.front().x >= GRID_COL_MAX) {
-        restartGame();
-	}
 }
 
 void Worm::restartGame(){
-    std::cout << "Restart func" << std::endl;
+    std::cout << "Restart Function" << std::endl;
 
-    // comment to stop the crash
-    // Remove all but the first segment
-    for(int i = worm.size(); i > 1; i--){
+    // Remove all but the worm head
+    for(int i = worm.size()-1; i >= 1; i--){
         worm.pop_back();
     }
 
@@ -225,9 +248,9 @@ void Worm::restartGame(){
 
     // Move the first segment back to the center start location
     worm.front().x = GRID_COL_MAX / 2;
-    worm.front().y = GRID_ROW_MAX / 2;
-    worm.front().currentDir = WORM_DIR::UP;
-    lv_table_set_cell_type(grid, GRID_COL_MAX / 2, GRID_ROW_MAX / 2, 2);
+    worm.front().y = GRID_ROW_MAX / 2 + 1;
+    //worm.front().currentDir = WORM_DIR::UP;
+    lv_table_set_cell_type(grid, GRID_COL_MAX / 2, GRID_ROW_MAX / 2 + 1, 2);
     lv_table_set_cell_type(grid, food.row, food.col, 3);
 }
 
@@ -237,8 +260,8 @@ void Worm::growWorm(int16_t xOffset, int16_t yOffset)
 	struct WormSegment newWormSegment;
 
 	if(worm.size() == 0) {
-		newWormSegment.x = GRID_ROW_MAX / 2;
-		newWormSegment.y = GRID_COL_MAX / 2;
+		newWormSegment.x = GRID_COL_MAX / 2;
+		newWormSegment.y = GRID_ROW_MAX / 2 + 1;
 		newWormSegment.currentDir = WORM_DIR::UP;
 		worm.push_back(newWormSegment);
 		lv_table_set_cell_type(grid, newWormSegment.y, newWormSegment.x, 2);

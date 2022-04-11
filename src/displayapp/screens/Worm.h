@@ -3,6 +3,7 @@
 #include <lvgl/lvgl.h>
 #include "displayapp/screens/Screen.h"
 #include <vector>
+#include <FreeRTOS.h>
 
 namespace Pinetime{
     namespace Components{
@@ -46,8 +47,8 @@ namespace Pinetime{
                     lv_style_t bgStyle;
                     lv_style_t wormStyle;
                     lv_style_t foodStyle;
-
                     lv_task_t *taskRefresh;
+                    TickType_t startTime;
 
                     void placeFood();
                     void growWorm(int16_t xOffset, int16_t yOffset);
