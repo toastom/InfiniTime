@@ -3,6 +3,7 @@
 #include "displayapp/LittleVgl.h"
 
 #include <cstdlib> // for rand()
+#include <math.h>
 
 using namespace Pinetime::Applications::Screens;
 
@@ -65,6 +66,11 @@ void Paddle::Refresh() {
   if (dx < 0 && ballX <= 4) {
     if (ballX >= -ballSize / 4) {
       if (ballY <= (paddlePos + 30 - ballSize / 4) && ballY >= (paddlePos - 30 - ballSize + ballSize / 4)) {
+        // Increasing difficulty as the game progresses
+        dx -= (score % 3 == 0) ? 1 : 0;
+        int yDir = (dy > 0) ? 1 : -1;
+        dy += (score % 3 == 0) ? yDir : 0;
+        
         dx *= -1;
         score++;
       }
@@ -74,6 +80,8 @@ void Paddle::Refresh() {
       ballX = (LV_HOR_RES - ballSize) / 2;
       ballY = (LV_VER_RES - ballSize) / 2;
       score = 0;
+      dx = 2;
+      dy = 3;
     }
   }
   lv_label_set_text_fmt(points, "%04d", score);
