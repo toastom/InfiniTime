@@ -6,6 +6,11 @@
 
 Fast open-source firmware for the [PineTime smartwatch](https://www.pine64.org/pinetime/) with many features, written in modern C++.
 
+## Toastom Tweaks
+My changes to the InfiniTime firmware
+ - Increasing ball speed in Paddle as the game progresses
+ - Custom user text on the Terminal watchface.
+
 ## New to InfiniTime?
 
 - [Getting started with InfiniTime](doc/gettingStarted/gettingStarted-1.0.md)
