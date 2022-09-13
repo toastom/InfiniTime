@@ -20,11 +20,7 @@ Calendar::Calendar( DisplayApp* app,
     lv_label_set_align(label_time, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(label_time, lv_scr_act(), LV_ALIGN_IN_TOP_LEFT, 0, 0);
     
-    /* Changed to status icon
-    batteryIcon = lv_label_create(lv_scr_act(), nullptr);
-    lv_label_set_text(batteryIcon, BatteryIcon::GetBatteryIcon(batteryController.PercentRemaining()));
-    lv_obj_align(batteryIcon, nullptr, LV_ALIGN_IN_TOP_RIGHT, 0, 0);
-    */
+    // Battery, bluetooth, and charging status indicators
     statusIcons.Create();
 
     // Create calendar object
@@ -36,9 +32,12 @@ Calendar::Calendar( DisplayApp* app,
     // Disable clicks
     lv_obj_set_click(calendar, false);
 
+    // Set color of the calendar header
+    lv_obj_set_style_local_text_color(calendar, LV_CALENDAR_PART_HEADER, LV_STATE_DEFAULT, LV_COLOR_YELLOW);
+
     // Set background of today's date
     lv_obj_set_style_local_bg_opa(calendar, LV_CALENDAR_PART_DATE, LV_STATE_FOCUSED, LV_OPA_COVER);
-    lv_obj_set_style_local_bg_color(calendar, LV_CALENDAR_PART_DATE, LV_STATE_FOCUSED, LV_COLOR_WHITE);
+    lv_obj_set_style_local_bg_color(calendar, LV_CALENDAR_PART_DATE, LV_STATE_FOCUSED, LV_COLOR_YELLOW);
     lv_obj_set_style_local_radius(calendar, LV_CALENDAR_PART_DATE, LV_STATE_FOCUSED, 3);
 
     // Set style of today's date
@@ -78,6 +77,13 @@ bool Calendar::OnTouchEvent(Pinetime::Applications::TouchEvents event) {
                 current.month++;
             }
             lv_calendar_set_showed_date(calendar, &current);
+            
+            // Change the header color if we're looking at this month
+            if(current.month == today.month && current.year == today.year)
+                lv_obj_set_style_local_text_color(calendar, LV_CALENDAR_PART_HEADER, LV_STATE_DEFAULT, LV_COLOR_YELLOW);
+            else
+                lv_obj_set_style_local_text_color(calendar, LV_CALENDAR_PART_HEADER, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+            
             return true;
         }
         case TouchEvents::SwipeRight: {
@@ -89,6 +95,13 @@ bool Calendar::OnTouchEvent(Pinetime::Applications::TouchEvents event) {
                 current.month--;
             }
             lv_calendar_set_showed_date(calendar, &current);
+
+            // Change the header color if we're looking at this month
+            if(current.month == today.month && current.year == today.year)
+                lv_obj_set_style_local_text_color(calendar, LV_CALENDAR_PART_HEADER, LV_STATE_DEFAULT, LV_COLOR_YELLOW);
+            else
+                lv_obj_set_style_local_text_color(calendar, LV_CALENDAR_PART_HEADER, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+
             return true;
         }
         default: {
