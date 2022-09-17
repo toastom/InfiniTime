@@ -7,9 +7,17 @@
 Fast open-source firmware for the [PineTime smartwatch](https://www.pine64.org/pinetime/) with many features, written in modern C++.
 
 ## toastom tweaks
-My changes to the InfiniTime firmware
+Some small changes made to fit my own personal taste
  - Increasing ball speed in Paddle as the game progresses
  - Custom user text on the Terminal watchface.
+ - Added [thnikk's](https://github.com/thnikk) calendar app from his [original PR #923](https://github.com/InfiniTimeOrg/InfiniTime/pull/923)
+ 	- Some small tweaks have been made so that it works with IT v1.10
+	- Customized the color of the current year/month header and today's date from white to orange
+
+### Other planned toastom tweaks
+ - Add [Neroburner](https://github.com/NeroBurner)'s [rebase](https://github.com/NeroBurner/InfiniTime/tree/Calc_rebase) of [Raupinger](https://github.com/Raupinger)'s original [calculator app](https://github.com/InfiniTimeOrg/InfiniTime/pull/375)
+ 	- May make some changes to the button size or colors
+
 
 ## New to InfiniTime?
 
