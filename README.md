@@ -7,7 +7,8 @@ Fast open-source firmware for the [PineTime smartwatch](https://www.pine64.org/p
 ## toastom tweaks
 Some small changes made to fit my own personal taste
  - Increasing ball speed in Paddle as the game progresses
- - Custom user text on the Terminal watchface.
+ - Customized username on the terminal watchface
+ 	- ![Customized terminal watchface](terminal_toastom_screenshot.png)
  - Added [thnikk's](https://github.com/thnikk) calendar app from his [original PR #923](https://github.com/InfiniTimeOrg/InfiniTime/pull/923)
  	- Some small tweaks have been made so that it works with IT v1.10
 	- Customized the color of the current year/month header and today's date from white to orange
