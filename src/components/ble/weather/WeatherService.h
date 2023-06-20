@@ -36,18 +36,15 @@
 int WeatherCallback(uint16_t connHandle, uint16_t attrHandle, struct ble_gatt_access_ctxt* ctxt, void* arg);
 
 namespace Pinetime {
-  namespace System {
-    class SystemTask;
-  }
   namespace Controllers {
 
     class WeatherService {
     public:
-      explicit WeatherService(System::SystemTask& system, DateTime& dateTimeController);
+      explicit WeatherService(const DateTime& dateTimeController);
 
       void Init();
 
-      int OnCommand(uint16_t connHandle, uint16_t attrHandle, struct ble_gatt_access_ctxt* ctxt);
+      int OnCommand(struct ble_gatt_access_ctxt* ctxt);
 
       /*
        * Helper functions for quick access to currently valid data
@@ -127,12 +124,12 @@ namespace Pinetime {
         {.uuid = &weatherControlCharUuid.u, .access_cb = WeatherCallback, .arg = this, .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_READ},
         {nullptr}};
       const struct ble_gatt_svc_def serviceDefinition[2] = {
-        {.type = BLE_GATT_SVC_TYPE_PRIMARY, .uuid = &weatherUuid.u, .characteristics = characteristicDefinition}, {0}};
+        {.type = BLE_GATT_SVC_TYPE_PRIMARY, .uuid = &weatherUuid.u, .characteristics = characteristicDefinition},
+        {0}};
 
       uint16_t eventHandle {};
 
-      Pinetime::System::SystemTask& system;
-      Pinetime::Controllers::DateTime& dateTimeController;
+      const Pinetime::Controllers::DateTime& dateTimeController;
 
       std::vector<std::unique_ptr<WeatherData::TimelineHeader>> timeline;
       std::unique_ptr<WeatherData::TimelineHeader> nullTimelineheader = std::make_unique<WeatherData::TimelineHeader>();

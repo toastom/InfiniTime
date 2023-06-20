@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <chrono>
 #include "displayapp/screens/Screen.h"
-#include <bits/unique_ptr.h>
 #include <lvgl/src/lv_core/lv_style.h>
 #include <lvgl/src/lv_core/lv_obj.h>
 #include <components/motion/MotionController.h>
@@ -14,7 +13,7 @@ namespace Pinetime {
 
       class Motion : public Screen {
       public:
-        Motion(DisplayApp* app, Controllers::MotionController& motionController);
+        Motion(Controllers::MotionController& motionController);
         ~Motion() override;
 
         void Refresh() override;

@@ -27,17 +27,16 @@
 #undef min
 
 namespace Pinetime {
-  namespace System {
-    class SystemTask;
-  }
   namespace Controllers {
+    class NimbleController;
+
     class MusicService {
     public:
-      explicit MusicService(Pinetime::System::SystemTask& system);
+      explicit MusicService(NimbleController& nimble);
 
       void Init();
 
-      int OnCommand(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt* ctxt);
+      int OnCommand(struct ble_gatt_access_ctxt* ctxt);
 
       void event(char event);
 
@@ -81,13 +80,14 @@ namespace Pinetime {
       int trackLength {0};
       int trackNumber {};
       int tracksTotal {};
+      TickType_t trackProgressUpdateTime {0};
 
       float playbackSpeed {1.0f};
 
       bool repeat {false};
       bool shuffle {false};
 
-      Pinetime::System::SystemTask& m_system;
+      NimbleController& nimble;
     };
   }
 }

@@ -7,8 +7,9 @@
 #include "displayapp/Apps.h"
 #include "components/datetime/DateTimeController.h"
 #include "components/settings/Settings.h"
-#include "components/datetime/DateTimeController.h"
 #include "components/battery/BatteryController.h"
+#include "displayapp/widgets/PageIndicator.h"
+#include "displayapp/widgets/StatusIcons.h"
 
 namespace Pinetime {
   namespace Applications {
@@ -24,7 +25,8 @@ namespace Pinetime {
                       uint8_t numScreens,
                       DisplayApp* app,
                       Controllers::Settings& settingsController,
-                      Pinetime::Controllers::Battery& batteryController,
+                      const Controllers::Battery& batteryController,
+                      const Controllers::Ble& bleController,
                       Controllers::DateTime& dateTimeController,
                       std::array<Applications, 6>& applications);
 
@@ -34,18 +36,16 @@ namespace Pinetime {
         void OnValueChangedEvent(lv_obj_t* obj, uint32_t buttonId);
 
       private:
-        Pinetime::Controllers::Battery& batteryController;
+        DisplayApp* app;
         Controllers::DateTime& dateTimeController;
 
         lv_task_t* taskUpdate;
 
         lv_obj_t* label_time;
-        lv_obj_t* batteryIcon;
-        lv_point_t pageIndicatorBasePoints[2];
-        lv_point_t pageIndicatorPoints[2];
-        lv_obj_t* pageIndicatorBase;
-        lv_obj_t* pageIndicator;
         lv_obj_t* btnm1;
+
+        Widgets::PageIndicator pageIndicator;
+        Widgets::StatusIcons statusIcons;
 
         const char* btnmMap[8];
         Pinetime::Applications::Apps apps[6];

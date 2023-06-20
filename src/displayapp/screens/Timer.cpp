@@ -1,77 +1,71 @@
 #include "displayapp/screens/Timer.h"
-
 #include "displayapp/screens/Screen.h"
 #include "displayapp/screens/Symbols.h"
+#include "displayapp/InfiniTimeTheme.h"
 #include <lvgl/lvgl.h>
 
 using namespace Pinetime::Applications::Screens;
 
 static void btnEventHandler(lv_obj_t* obj, lv_event_t event) {
-  Timer* screen = static_cast<Timer*>(obj->user_data);
-  screen->OnButtonEvent(obj, event);
+  auto* screen = static_cast<Timer*>(obj->user_data);
+  if (event == LV_EVENT_PRESSED) {
+    screen->ButtonPressed();
+  } else if (event == LV_EVENT_RELEASED || event == LV_EVENT_PRESS_LOST) {
+    screen->MaskReset();
+  } else if (event == LV_EVENT_SHORT_CLICKED) {
+    screen->ToggleRunning();
+  }
 }
 
-void Timer::createButtons() {
-  btnMinutesUp = lv_btn_create(lv_scr_act(), nullptr);
-  btnMinutesUp->user_data = this;
-  lv_obj_set_event_cb(btnMinutesUp, btnEventHandler);
-  lv_obj_align(btnMinutesUp, lv_scr_act(), LV_ALIGN_IN_LEFT_MID, 20, -80);
-  lv_obj_set_height(btnMinutesUp, 40);
-  lv_obj_set_width(btnMinutesUp, 60);
-  txtMUp = lv_label_create(btnMinutesUp, nullptr);
-  lv_label_set_text(txtMUp, "+");
+Timer::Timer(Controllers::Timer& timerController) : timer {timerController} {
 
-  btnMinutesDown = lv_btn_create(lv_scr_act(), nullptr);
-  btnMinutesDown->user_data = this;
-  lv_obj_set_event_cb(btnMinutesDown, btnEventHandler);
-  lv_obj_align(btnMinutesDown, lv_scr_act(), LV_ALIGN_IN_LEFT_MID, 20, +40);
-  lv_obj_set_height(btnMinutesDown, 40);
-  lv_obj_set_width(btnMinutesDown, 60);
-  txtMDown = lv_label_create(btnMinutesDown, nullptr);
-  lv_label_set_text(txtMDown, "-");
+  lv_obj_t* colonLabel = lv_label_create(lv_scr_act(), nullptr);
+  lv_obj_set_style_local_text_font(colonLabel, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_76);
+  lv_obj_set_style_local_text_color(colonLabel, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+  lv_label_set_text_static(colonLabel, ":");
+  lv_obj_align(colonLabel, lv_scr_act(), LV_ALIGN_CENTER, 0, -29);
 
-  btnSecondsUp = lv_btn_create(lv_scr_act(), nullptr);
-  btnSecondsUp->user_data = this;
-  lv_obj_set_event_cb(btnSecondsUp, btnEventHandler);
-  lv_obj_align(btnSecondsUp, lv_scr_act(), LV_ALIGN_IN_RIGHT_MID, 10, -80);
-  lv_obj_set_height(btnSecondsUp, 40);
-  lv_obj_set_width(btnSecondsUp, 60);
-  txtSUp = lv_label_create(btnSecondsUp, nullptr);
-  lv_label_set_text(txtSUp, "+");
+  minuteCounter.Create();
+  secondCounter.Create();
+  lv_obj_align(minuteCounter.GetObject(), nullptr, LV_ALIGN_IN_TOP_LEFT, 0, 0);
+  lv_obj_align(secondCounter.GetObject(), nullptr, LV_ALIGN_IN_TOP_RIGHT, 0, 0);
 
-  btnSecondsDown = lv_btn_create(lv_scr_act(), nullptr);
-  btnSecondsDown->user_data = this;
-  lv_obj_set_event_cb(btnSecondsDown, btnEventHandler);
-  lv_obj_align(btnSecondsDown, lv_scr_act(), LV_ALIGN_IN_RIGHT_MID, 10, +40);
-  lv_obj_set_height(btnSecondsDown, 40);
-  lv_obj_set_width(btnSecondsDown, 60);
-  txtSDown = lv_label_create(btnSecondsDown, nullptr);
-  lv_label_set_text(txtSDown, "-");
-}
+  highlightObjectMask = lv_objmask_create(lv_scr_act(), nullptr);
+  lv_obj_set_size(highlightObjectMask, 240, 50);
+  lv_obj_align(highlightObjectMask, lv_scr_act(), LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
-Timer::Timer(DisplayApp* app, Controllers::TimerController& timerController)
-  : Screen(app), running {true}, timerController {timerController} {
+  lv_draw_mask_line_param_t tmpMaskLine;
 
-  time = lv_label_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_text_font(time, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_76);
-  lv_obj_set_style_local_text_color(time, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
+  lv_draw_mask_line_points_init(&tmpMaskLine, 0, 0, 0, 240, LV_DRAW_MASK_LINE_SIDE_LEFT);
+  highlightMask = lv_objmask_add_mask(highlightObjectMask, &tmpMaskLine);
 
-  uint32_t seconds = timerController.GetTimeRemaining() / 1000;
-  lv_label_set_text_fmt(time, "%02lu:%02lu", seconds / 60, seconds % 60);
+  lv_obj_t* btnHighlight = lv_obj_create(highlightObjectMask, nullptr);
+  lv_obj_set_style_local_radius(btnHighlight, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
+  lv_obj_set_style_local_bg_color(btnHighlight, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_ORANGE);
+  lv_obj_set_size(btnHighlight, LV_HOR_RES, 50);
+  lv_obj_align(btnHighlight, lv_scr_act(), LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
-  lv_obj_align(time, lv_scr_act(), LV_ALIGN_IN_LEFT_MID, 0, -20);
+  btnObjectMask = lv_objmask_create(lv_scr_act(), nullptr);
+  lv_obj_set_size(btnObjectMask, 240, 50);
+  lv_obj_align(btnObjectMask, lv_scr_act(), LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
-  btnPlayPause = lv_btn_create(lv_scr_act(), nullptr);
+  lv_draw_mask_line_points_init(&tmpMaskLine, 0, 0, 0, 240, LV_DRAW_MASK_LINE_SIDE_RIGHT);
+  btnMask = lv_objmask_add_mask(btnObjectMask, &tmpMaskLine);
+
+  btnPlayPause = lv_btn_create(btnObjectMask, nullptr);
   btnPlayPause->user_data = this;
+  lv_obj_set_style_local_radius(btnPlayPause, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
+  lv_obj_set_style_local_bg_color(btnPlayPause, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, Colors::bgAlt);
   lv_obj_set_event_cb(btnPlayPause, btnEventHandler);
-  lv_obj_align(btnPlayPause, lv_scr_act(), LV_ALIGN_IN_BOTTOM_MID, 0, -10);
-  lv_obj_set_height(btnPlayPause, 40);
-  txtPlayPause = lv_label_create(btnPlayPause, nullptr);
+  lv_obj_set_size(btnPlayPause, LV_HOR_RES, 50);
+
+  txtPlayPause = lv_label_create(lv_scr_act(), nullptr);
+  lv_obj_align(txtPlayPause, btnPlayPause, LV_ALIGN_CENTER, 0, 0);
+
   if (timerController.IsRunning()) {
-    lv_label_set_text(txtPlayPause, Symbols::pause);
+    SetTimerRunning();
   } else {
-    lv_label_set_text(txtPlayPause, Symbols::play);
-    createButtons();
+    SetTimerStopped();
   }
 
   taskRefresh = lv_task_create(RefreshTaskCallback, LV_DISP_DEF_REFR_PERIOD, LV_TASK_PRIO_MID, this);
@@ -82,80 +76,78 @@ Timer::~Timer() {
   lv_obj_clean(lv_scr_act());
 }
 
-void Timer::Refresh() {
-  if (timerController.IsRunning()) {
-    uint32_t seconds = timerController.GetTimeRemaining() / 1000;
-    lv_label_set_text_fmt(time, "%02lu:%02lu", seconds / 60, seconds % 60);
-  }
+void Timer::ButtonPressed() {
+  pressTime = xTaskGetTickCount();
+  buttonPressing = true;
 }
 
-void Timer::OnButtonEvent(lv_obj_t* obj, lv_event_t event) {
-  if (event == LV_EVENT_CLICKED) {
-    if (obj == btnPlayPause) {
-      if (timerController.IsRunning()) {
-        lv_label_set_text(txtPlayPause, Symbols::play);
-        uint32_t seconds = timerController.GetTimeRemaining() / 1000;
-        minutesToSet = seconds / 60;
-        secondsToSet = seconds % 60;
-        timerController.StopTimer();
-        createButtons();
+void Timer::MaskReset() {
+  buttonPressing = false;
+  // A click event is processed before a release event,
+  // so the release event would override the "Pause" text without this check
+  if (!timer.IsRunning()) {
+    lv_label_set_text_static(txtPlayPause, "Start");
+  }
+  maskPosition = 0;
+  UpdateMask();
+}
 
-      } else if (secondsToSet + minutesToSet > 0) {
-        lv_label_set_text(txtPlayPause, Symbols::pause);
-        timerController.StartTimer((secondsToSet + minutesToSet * 60) * 1000);
+void Timer::UpdateMask() {
+  lv_draw_mask_line_param_t maskLine;
 
-        lv_obj_del(btnSecondsDown);
-        btnSecondsDown = nullptr;
-        lv_obj_del(btnSecondsUp);
-        btnSecondsUp = nullptr;
-        lv_obj_del(btnMinutesDown);
-        btnMinutesDown = nullptr;
-        lv_obj_del(btnMinutesUp);
-        btnMinutesUp = nullptr;
-      }
+  lv_draw_mask_line_points_init(&maskLine, maskPosition, 0, maskPosition, 240, LV_DRAW_MASK_LINE_SIDE_LEFT);
+  lv_objmask_update_mask(highlightObjectMask, highlightMask, &maskLine);
+
+  lv_draw_mask_line_points_init(&maskLine, maskPosition, 0, maskPosition, 240, LV_DRAW_MASK_LINE_SIDE_RIGHT);
+  lv_objmask_update_mask(btnObjectMask, btnMask, &maskLine);
+}
+
+void Timer::Refresh() {
+  if (timer.IsRunning()) {
+    auto secondsRemaining = std::chrono::duration_cast<std::chrono::seconds>(timer.GetTimeRemaining());
+    minuteCounter.SetValue(secondsRemaining.count() / 60);
+    secondCounter.SetValue(secondsRemaining.count() % 60);
+  } else if (buttonPressing && xTaskGetTickCount() > pressTime + pdMS_TO_TICKS(150)) {
+    lv_label_set_text_static(txtPlayPause, "Reset");
+    maskPosition += 15;
+    if (maskPosition > 240) {
+      MaskReset();
+      Reset();
     } else {
-      if (!timerController.IsRunning()) {
-        if (obj == btnMinutesUp) {
-          if (minutesToSet >= 59) {
-            minutesToSet = 0;
-          } else {
-            minutesToSet++;
-          }
-          lv_label_set_text_fmt(time, "%02d:%02d", minutesToSet, secondsToSet);
-
-        } else if (obj == btnMinutesDown) {
-          if (minutesToSet == 0) {
-            minutesToSet = 59;
-          } else {
-            minutesToSet--;
-          }
-          lv_label_set_text_fmt(time, "%02d:%02d", minutesToSet, secondsToSet);
-
-        } else if (obj == btnSecondsUp) {
-          if (secondsToSet >= 59) {
-            secondsToSet = 0;
-          } else {
-            secondsToSet++;
-          }
-          lv_label_set_text_fmt(time, "%02d:%02d", minutesToSet, secondsToSet);
-
-        } else if (obj == btnSecondsDown) {
-          if (secondsToSet == 0) {
-            secondsToSet = 59;
-          } else {
-            secondsToSet--;
-          }
-          lv_label_set_text_fmt(time, "%02d:%02d", minutesToSet, secondsToSet);
-        }
-      }
+      UpdateMask();
     }
   }
 }
 
-void Timer::setDone() {
-  lv_label_set_text(time, "00:00");
-  lv_label_set_text(txtPlayPause, Symbols::play);
-  secondsToSet = 0;
-  minutesToSet = 0;
-  createButtons();
+void Timer::SetTimerRunning() {
+  minuteCounter.HideControls();
+  secondCounter.HideControls();
+  lv_label_set_text_static(txtPlayPause, "Pause");
+}
+
+void Timer::SetTimerStopped() {
+  minuteCounter.ShowControls();
+  secondCounter.ShowControls();
+  lv_label_set_text_static(txtPlayPause, "Start");
+}
+
+void Timer::ToggleRunning() {
+  if (timer.IsRunning()) {
+    auto secondsRemaining = std::chrono::duration_cast<std::chrono::seconds>(timer.GetTimeRemaining());
+    minuteCounter.SetValue(secondsRemaining.count() / 60);
+    secondCounter.SetValue(secondsRemaining.count() % 60);
+    timer.StopTimer();
+    SetTimerStopped();
+  } else if (secondCounter.GetValue() + minuteCounter.GetValue() > 0) {
+    auto timerDuration = std::chrono::minutes(minuteCounter.GetValue()) + std::chrono::seconds(secondCounter.GetValue());
+    timer.StartTimer(timerDuration);
+    Refresh();
+    SetTimerRunning();
+  }
+}
+
+void Timer::Reset() {
+  minuteCounter.SetValue(0);
+  secondCounter.SetValue(0);
+  SetTimerStopped();
 }

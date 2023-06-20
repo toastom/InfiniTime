@@ -1,30 +1,44 @@
 #include "touchhandler/TouchHandler.h"
 
 using namespace Pinetime::Controllers;
+using namespace Pinetime::Applications;
 
-TouchHandler::TouchHandler(Drivers::Cst816S& touchPanel, Components::LittleVgl& lvgl) : touchPanel {touchPanel}, lvgl {lvgl} {
-}
-
-void TouchHandler::CancelTap() {
-  if (info.touching) {
-    isCancelled = true;
-    lvgl.SetNewTouchPoint(-1, -1, true);
+namespace {
+  TouchEvents ConvertGesture(Pinetime::Drivers::Cst816S::Gestures gesture) {
+    switch (gesture) {
+      case Pinetime::Drivers::Cst816S::Gestures::SingleTap:
+        return TouchEvents::Tap;
+      case Pinetime::Drivers::Cst816S::Gestures::LongPress:
+        return TouchEvents::LongTap;
+      case Pinetime::Drivers::Cst816S::Gestures::DoubleTap:
+        return TouchEvents::DoubleTap;
+      case Pinetime::Drivers::Cst816S::Gestures::SlideRight:
+        return TouchEvents::SwipeRight;
+      case Pinetime::Drivers::Cst816S::Gestures::SlideLeft:
+        return TouchEvents::SwipeLeft;
+      case Pinetime::Drivers::Cst816S::Gestures::SlideDown:
+        return TouchEvents::SwipeDown;
+      case Pinetime::Drivers::Cst816S::Gestures::SlideUp:
+        return TouchEvents::SwipeUp;
+      case Pinetime::Drivers::Cst816S::Gestures::None:
+      default:
+        return TouchEvents::None;
+    }
   }
 }
 
-Pinetime::Drivers::Cst816S::Gestures TouchHandler::GestureGet() {
+Pinetime::Applications::TouchEvents TouchHandler::GestureGet() {
   auto returnGesture = gesture;
-  gesture = Drivers::Cst816S::Gestures::None;
+  gesture = Pinetime::Applications::TouchEvents::None;
   return returnGesture;
 }
 
-bool TouchHandler::GetNewTouchInfo() {
-  info = touchPanel.GetTouchInfo();
-
+bool TouchHandler::ProcessTouchInfo(Drivers::Cst816S::TouchInfos info) {
   if (!info.isValid) {
     return false;
   }
 
+  // Only a single gesture per touch
   if (info.gesture != Pinetime::Drivers::Cst816S::Gestures::None) {
     if (gestureReleased) {
       if (info.gesture == Pinetime::Drivers::Cst816S::Gestures::SlideDown ||
@@ -33,11 +47,11 @@ bool TouchHandler::GetNewTouchInfo() {
           info.gesture == Pinetime::Drivers::Cst816S::Gestures::SlideRight ||
           info.gesture == Pinetime::Drivers::Cst816S::Gestures::LongPress) {
         if (info.touching) {
-          gesture = info.gesture;
+          gesture = ConvertGesture(info.gesture);
           gestureReleased = false;
         }
       } else {
-        gesture = info.gesture;
+        gesture = ConvertGesture(info.gesture);
       }
     }
   }
@@ -46,20 +60,7 @@ bool TouchHandler::GetNewTouchInfo() {
     gestureReleased = true;
   }
 
-  return true;
-}
+  currentTouchPoint = {info.x, info.y, info.touching};
 
-void TouchHandler::UpdateLvglTouchPoint() {
-  if (info.touching) {
-    if (!isCancelled) {
-      lvgl.SetNewTouchPoint(info.x, info.y, true);
-    }
-  } else {
-    if (isCancelled) {
-      lvgl.SetNewTouchPoint(-1, -1, false);
-      isCancelled = false;
-    } else {
-      lvgl.SetNewTouchPoint(info.x, info.y, false);
-    }
-  }
+  return true;
 }

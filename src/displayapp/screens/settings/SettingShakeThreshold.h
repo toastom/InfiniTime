@@ -5,6 +5,8 @@
 #include "components/settings/Settings.h"
 #include "displayapp/screens/Screen.h"
 #include <components/motion/MotionController.h>
+#include "systemtask/SystemTask.h"
+
 namespace Pinetime {
 
   namespace Applications {
@@ -12,8 +14,7 @@ namespace Pinetime {
 
       class SettingShakeThreshold : public Screen {
       public:
-        SettingShakeThreshold(DisplayApp* app,
-                              Pinetime::Controllers::Settings& settingsController,
+        SettingShakeThreshold(Pinetime::Controllers::Settings& settingsController,
                               Controllers::MotionController& motionController,
                               System::SystemTask& systemTask);
 
@@ -27,8 +28,8 @@ namespace Pinetime {
         System::SystemTask& systemTask;
         uint8_t calibrating;
         bool EnableForCal;
-        uint32_t vDecay,vCalTime;
-        lv_obj_t *positionArc, *animArc,*calButton, *calLabel;
+        uint32_t vDecay, vCalTime;
+        lv_obj_t *positionArc, *animArc, *calButton, *calLabel;
         lv_task_t* refreshTask;
       };
     }

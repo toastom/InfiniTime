@@ -6,14 +6,13 @@
 
 using namespace Pinetime::Drivers;
 
-St7789::St7789(Spi& spi, uint8_t pinDataCommand) : spi {spi}, pinDataCommand {pinDataCommand} {
+St7789::St7789(Spi& spi, uint8_t pinDataCommand, uint8_t pinReset) : spi {spi}, pinDataCommand {pinDataCommand}, pinReset {pinReset} {
 }
 
 void St7789::Init() {
-  spi.Init();
   nrf_gpio_cfg_output(pinDataCommand);
-  nrf_gpio_cfg_output(26);
-  nrf_gpio_pin_set(26);
+  nrf_gpio_cfg_output(pinReset);
+  nrf_gpio_pin_set(pinReset);
   HardwareReset();
   SoftwareReset();
   SleepOut();
@@ -21,8 +20,12 @@ void St7789::Init() {
   MemoryDataAccessControl();
   ColumnAddressSet();
   RowAddressSet();
+// P8B Mirrored version does not need display inversion.
+#ifndef DRIVER_DISPLAY_MIRROR
   DisplayInversionOn();
+#endif
   NormalModeOn();
+  SetVdv();
   DisplayOn();
 }
 
@@ -61,7 +64,18 @@ void St7789::ColMod() {
 
 void St7789::MemoryDataAccessControl() {
   WriteCommand(static_cast<uint8_t>(Commands::MemoryDataAccessControl));
+#ifdef DRIVER_DISPLAY_MIRROR
+  // [7] = MY = Page Address Order, 0 = Top to bottom, 1 = Bottom to top
+  // [6] = MX = Column Address Order, 0 = Left to right, 1 = Right to left
+  // [5] = MV = Page/Column Order, 0 = Normal mode, 1 = Reverse mode
+  // [4] = ML = Line Address Order, 0 = LCD refresh from top to bottom, 1 = Bottom to top
+  // [3] = RGB = RGB/BGR Order, 0 = RGB, 1 = BGR
+  // [2] = MH = Display Data Latch Order, 0 = LCD refresh from left to right, 1 = Right to left
+  // [0 .. 1] = Unused
+  WriteData(0b01000000);
+#else
   WriteData(0x00);
+#endif
 }
 
 void St7789::ColumnAddressSet() {
@@ -114,6 +128,13 @@ void St7789::WriteToRam() {
   WriteCommand(static_cast<uint8_t>(Commands::WriteToRam));
 }
 
+void St7789::SetVdv() {
+  // By default there is a large step from pixel brightness zero to one.
+  // After experimenting with VCOMS, VRH and VDV, this was found to produce good results.
+  WriteCommand(static_cast<uint8_t>(Commands::VdvSet));
+  WriteData(0x10);
+}
+
 void St7789::DisplayOff() {
   WriteCommand(static_cast<uint8_t>(Commands::DisplayOff));
   nrf_delay_ms(500);
@@ -157,9 +178,9 @@ void St7789::DrawBuffer(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
 }
 
 void St7789::HardwareReset() {
-  nrf_gpio_pin_clear(26);
+  nrf_gpio_pin_clear(pinReset);
   nrf_delay_ms(10);
-  nrf_gpio_pin_set(26);
+  nrf_gpio_pin_set(pinReset);
 }
 
 void St7789::Sleep() {

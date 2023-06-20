@@ -19,7 +19,7 @@ namespace {
     return 0;
   }
 
-  void user_delay(uint32_t period_us, void* intf_ptr) {
+  void user_delay(uint32_t period_us, void* /*intf_ptr*/) {
     nrf_delay_us(period_us);
   }
 }
@@ -42,10 +42,16 @@ void Bma421::Init() {
   if (ret != BMA4_OK)
     return;
 
-  switch(bma.chip_id) {
-    case BMA423_CHIP_ID: deviceType = DeviceTypes::BMA421; break;
-    case BMA425_CHIP_ID: deviceType = DeviceTypes::BMA425; break;
-    default: deviceType = DeviceTypes::Unknown; break;
+  switch (bma.chip_id) {
+    case BMA423_CHIP_ID:
+      deviceType = DeviceTypes::BMA421;
+      break;
+    case BMA425_CHIP_ID:
+      deviceType = DeviceTypes::BMA425;
+      break;
+    default:
+      deviceType = DeviceTypes::Unknown;
+      break;
   }
 
   ret = bma423_write_config_file(&bma);
@@ -112,6 +118,7 @@ Bma421::Values Bma421::Process() {
   // X and Y axis are swapped because of the way the sensor is mounted in the PineTime
   return {steps, data.y, data.x, data.z};
 }
+
 bool Bma421::IsOk() const {
   return isOk;
 }
@@ -127,6 +134,7 @@ void Bma421::SoftReset() {
     nrf_delay_ms(1);
   }
 }
+
 Bma421::DeviceTypes Bma421::DeviceType() const {
   return deviceType;
 }

@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <chrono>
 #include "displayapp/screens/Screen.h"
-#include <bits/unique_ptr.h>
 #include "systemtask/SystemTask.h"
 #include <lvgl/src/lv_core/lv_style.h>
 #include <lvgl/src/lv_core/lv_obj.h>
@@ -12,12 +11,13 @@ namespace Pinetime {
   namespace Controllers {
     class HeartRateController;
   }
+
   namespace Applications {
     namespace Screens {
 
       class HeartRate : public Screen {
       public:
-        HeartRate(DisplayApp* app, Controllers::HeartRateController& HeartRateController, System::SystemTask& systemTask);
+        HeartRate(Controllers::HeartRateController& HeartRateController, System::SystemTask& systemTask);
         ~HeartRate() override;
 
         void Refresh() override;

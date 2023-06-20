@@ -31,7 +31,7 @@ namespace Pinetime {
     namespace Screens {
       class Music : public Screen {
       public:
-        Music(DisplayApp* app, Pinetime::Controllers::MusicService& music);
+        Music(Pinetime::Controllers::MusicService& music);
 
         ~Music() override;
 
@@ -40,7 +40,7 @@ namespace Pinetime {
         void OnObjectEvent(lv_obj_t* obj, lv_event_t event);
 
       private:
-        bool OnTouchEvent(TouchEvents event);
+        bool OnTouchEvent(TouchEvents event) override;
 
         void UpdateLength();
 
@@ -69,11 +69,9 @@ namespace Pinetime {
         std::string track;
 
         /** Total length in seconds */
-        int totalLength;
-        /** Current length in seconds */
-        int currentLength;
-        /** Last length */
-        int lastLength;
+        int totalLength = 0;
+        /** Current position in seconds */
+        int currentPosition;
         /** Last time an animation update or timer was incremented */
         TickType_t lastIncrement = 0;
 

@@ -3,6 +3,7 @@
 #include <components/heartrate/HeartRateController.h>
 
 #include "displayapp/DisplayApp.h"
+#include "displayapp/InfiniTimeTheme.h"
 
 using namespace Pinetime::Applications::Screens;
 
@@ -21,36 +22,35 @@ namespace {
     return "";
   }
 
-  static void btnStartStopEventHandler(lv_obj_t* obj, lv_event_t event) {
-    HeartRate* screen = static_cast<HeartRate*>(obj->user_data);
+  void btnStartStopEventHandler(lv_obj_t* obj, lv_event_t event) {
+    auto* screen = static_cast<HeartRate*>(obj->user_data);
     screen->OnStartStopEvent(event);
   }
 }
 
-HeartRate::HeartRate(Pinetime::Applications::DisplayApp* app,
-                     Controllers::HeartRateController& heartRateController,
-                     System::SystemTask& systemTask)
-  : Screen(app), heartRateController {heartRateController}, systemTask {systemTask} {
+HeartRate::HeartRate(Controllers::HeartRateController& heartRateController, System::SystemTask& systemTask)
+  : heartRateController {heartRateController}, systemTask {systemTask} {
   bool isHrRunning = heartRateController.State() != Controllers::HeartRateController::States::Stopped;
   label_hr = lv_label_create(lv_scr_act(), nullptr);
 
   lv_obj_set_style_local_text_font(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_76);
 
-  if (isHrRunning)
-    lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GREEN);
-  else
-    lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
+  if (isHrRunning) {
+    lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, Colors::highlight);
+  } else {
+    lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, Colors::lightGray);
+  }
 
-  lv_label_set_text(label_hr, "000");
+  lv_label_set_text_static(label_hr, "000");
   lv_obj_align(label_hr, nullptr, LV_ALIGN_CENTER, 0, -40);
 
   label_bpm = lv_label_create(lv_scr_act(), nullptr);
-  lv_label_set_text(label_bpm, "Heart rate BPM");
+  lv_label_set_text_static(label_bpm, "Heart rate BPM");
   lv_obj_align(label_bpm, label_hr, LV_ALIGN_OUT_TOP_MID, 0, -20);
 
   label_status = lv_label_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_text_color(label_status, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0x222222));
-  lv_label_set_text(label_status, ToString(Pinetime::Controllers::HeartRateController::States::NotEnoughData));
+  lv_obj_set_style_local_text_color(label_status, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
+  lv_label_set_text_static(label_status, ToString(Pinetime::Controllers::HeartRateController::States::NotEnoughData));
 
   lv_obj_align(label_status, label_hr, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 
@@ -62,8 +62,9 @@ HeartRate::HeartRate(Pinetime::Applications::DisplayApp* app,
 
   label_startStop = lv_label_create(btn_startStop, nullptr);
   UpdateStartStopButton(isHrRunning);
-  if (isHrRunning)
+  if (isHrRunning) {
     systemTask.PushMessage(Pinetime::System::Messages::DisableSleeping);
+  }
 
   taskRefresh = lv_task_create(RefreshTaskCallback, 100, LV_TASK_PRIO_MID, this);
 }
@@ -81,13 +82,13 @@ void HeartRate::Refresh() {
     case Controllers::HeartRateController::States::NoTouch:
     case Controllers::HeartRateController::States::NotEnoughData:
       // case Controllers::HeartRateController::States::Stopped:
-      lv_label_set_text(label_hr, "000");
+      lv_label_set_text_static(label_hr, "000");
       break;
     default:
       lv_label_set_text_fmt(label_hr, "%03d", heartRateController.HeartRate());
   }
 
-  lv_label_set_text(label_status, ToString(state));
+  lv_label_set_text_static(label_status, ToString(state));
   lv_obj_align(label_status, label_hr, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 }
 
@@ -97,19 +98,20 @@ void HeartRate::OnStartStopEvent(lv_event_t event) {
       heartRateController.Start();
       UpdateStartStopButton(heartRateController.State() != Controllers::HeartRateController::States::Stopped);
       systemTask.PushMessage(Pinetime::System::Messages::DisableSleeping);
-      lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GREEN);
+      lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, Colors::highlight);
     } else {
       heartRateController.Stop();
       UpdateStartStopButton(heartRateController.State() != Controllers::HeartRateController::States::Stopped);
       systemTask.PushMessage(Pinetime::System::Messages::EnableSleeping);
-      lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_GRAY);
+      lv_obj_set_style_local_text_color(label_hr, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, Colors::lightGray);
     }
   }
 }
 
 void HeartRate::UpdateStartStopButton(bool isRunning) {
-  if (isRunning)
-    lv_label_set_text(label_startStop, "Stop");
-  else
-    lv_label_set_text(label_startStop, "Start");
+  if (isRunning) {
+    lv_label_set_text_static(label_startStop, "Stop");
+  } else {
+    lv_label_set_text_static(label_startStop, "Start");
+  }
 }

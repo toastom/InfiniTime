@@ -9,10 +9,11 @@ namespace Pinetime {
     namespace Screens {
       class Error : public Screen {
       public:
-        Error(DisplayApp* app, System::BootErrors error);
+        Error(System::BootErrors error);
         ~Error() override;
 
         void ButtonEventHandler();
+
       private:
         lv_obj_t* btnOk;
       };

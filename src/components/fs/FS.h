@@ -11,7 +11,6 @@ namespace Pinetime {
       FS(Pinetime::Drivers::SpiNorFlash&);
 
       void Init();
-      void LVGLFileSystemInit();
 
       int FileOpen(lfs_file_t* file_p, const char* fileName, const int flags);
       int FileClose(lfs_file_t* file_p);
@@ -26,7 +25,7 @@ namespace Pinetime {
       int DirRead(lfs_dir_t* dir, lfs_info* info);
       int DirRewind(lfs_dir_t* dir);
       int DirCreate(const char* path);
- 
+
       lfs_ssize_t GetFSSize();
       int Rename(const char* oldPath, const char* newPath);
       int Stat(const char* path, lfs_info* info);
@@ -35,6 +34,7 @@ namespace Pinetime {
       static size_t getSize() {
         return size;
       }
+
       static size_t getBlockSize() {
         return blockSize;
       }

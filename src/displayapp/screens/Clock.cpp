@@ -1,6 +1,5 @@
 #include "displayapp/screens/Clock.h"
 
-#include <date/date.h>
 #include <lvgl/lvgl.h>
 #include "components/battery/BatteryController.h"
 #include "components/motion/MotionController.h"
@@ -9,37 +8,52 @@
 #include "components/settings/Settings.h"
 #include "displayapp/DisplayApp.h"
 #include "displayapp/screens/WatchFaceDigital.h"
+#include "displayapp/screens/WatchFaceTerminal.h"
+#include "displayapp/screens/WatchFaceInfineat.h"
 #include "displayapp/screens/WatchFaceAnalog.h"
-#include "displayapp/screens/PineTimeStyle.h"
+#include "displayapp/screens/WatchFacePineTimeStyle.h"
+#include "displayapp/screens/WatchFaceCasioStyleG7710.h"
 
 using namespace Pinetime::Applications::Screens;
+using namespace Pinetime::Applications;
 
-Clock::Clock(DisplayApp* app,
-             Controllers::DateTime& dateTimeController,
-             Controllers::Battery& batteryController,
-             Controllers::Ble& bleController,
-             Controllers::NotificationManager& notificatioManager,
+Clock::Clock(Controllers::DateTime& dateTimeController,
+             const Controllers::Battery& batteryController,
+             const Controllers::Ble& bleController,
+             Controllers::NotificationManager& notificationManager,
              Controllers::Settings& settingsController,
              Controllers::HeartRateController& heartRateController,
-             Controllers::MotionController& motionController)
-  : Screen(app),
-    dateTimeController {dateTimeController},
+             Controllers::MotionController& motionController,
+             Controllers::WeatherService& weatherService,
+             Controllers::FS& filesystem)
+  : dateTimeController {dateTimeController},
     batteryController {batteryController},
     bleController {bleController},
-    notificatioManager {notificatioManager},
+    notificationManager {notificationManager},
     settingsController {settingsController},
     heartRateController {heartRateController},
     motionController {motionController},
+    weatherService {weatherService},
+    filesystem {filesystem},
     screen {[this, &settingsController]() {
-      switch (settingsController.GetClockFace()) {
-        case 0:
+      switch (settingsController.GetWatchFace()) {
+        case WatchFace::Digital:
           return WatchFaceDigitalScreen();
           break;
-        case 1:
+        case WatchFace::Analog:
           return WatchFaceAnalogScreen();
           break;
-        case 2:
-          return PineTimeStyleScreen();
+        case WatchFace::PineTimeStyle:
+          return WatchFacePineTimeStyleScreen();
+          break;
+        case WatchFace::Terminal:
+          return WatchFaceTerminalScreen();
+          break;
+        case WatchFace::Infineat:
+          return WatchFaceInfineatScreen();
+          break;
+        case WatchFace::CasioStyleG7710:
+          return WatchFaceCasioStyleG7710();
           break;
       }
       return WatchFaceDigitalScreen();
@@ -60,27 +74,60 @@ bool Clock::OnButtonPushed() {
 }
 
 std::unique_ptr<Screen> Clock::WatchFaceDigitalScreen() {
-  return std::make_unique<Screens::WatchFaceDigital>(app,
-                                                     dateTimeController,
+  return std::make_unique<Screens::WatchFaceDigital>(dateTimeController,
                                                      batteryController,
                                                      bleController,
-                                                     notificatioManager,
+                                                     notificationManager,
                                                      settingsController,
                                                      heartRateController,
                                                      motionController);
 }
 
 std::unique_ptr<Screen> Clock::WatchFaceAnalogScreen() {
-  return std::make_unique<Screens::WatchFaceAnalog>(
-    app, dateTimeController, batteryController, bleController, notificatioManager, settingsController);
+  return std::make_unique<Screens::WatchFaceAnalog>(dateTimeController,
+                                                    batteryController,
+                                                    bleController,
+                                                    notificationManager,
+                                                    settingsController);
 }
 
-std::unique_ptr<Screen> Clock::PineTimeStyleScreen() {
-  return std::make_unique<Screens::PineTimeStyle>(app,
-                                                     dateTimeController,
-                                                     batteryController,
-                                                     bleController,
-                                                     notificatioManager,
-                                                     settingsController,
-                                                     motionController);
+std::unique_ptr<Screen> Clock::WatchFacePineTimeStyleScreen() {
+  return std::make_unique<Screens::WatchFacePineTimeStyle>(dateTimeController,
+                                                           batteryController,
+                                                           bleController,
+                                                           notificationManager,
+                                                           settingsController,
+                                                           motionController,
+                                                           weatherService);
+}
+
+std::unique_ptr<Screen> Clock::WatchFaceTerminalScreen() {
+  return std::make_unique<Screens::WatchFaceTerminal>(dateTimeController,
+                                                      batteryController,
+                                                      bleController,
+                                                      notificationManager,
+                                                      settingsController,
+                                                      heartRateController,
+                                                      motionController);
+}
+
+std::unique_ptr<Screen> Clock::WatchFaceInfineatScreen() {
+  return std::make_unique<Screens::WatchFaceInfineat>(dateTimeController,
+                                                      batteryController,
+                                                      bleController,
+                                                      notificationManager,
+                                                      settingsController,
+                                                      motionController,
+                                                      filesystem);
+}
+
+std::unique_ptr<Screen> Clock::WatchFaceCasioStyleG7710() {
+  return std::make_unique<Screens::WatchFaceCasioStyleG7710>(dateTimeController,
+                                                             batteryController,
+                                                             bleController,
+                                                             notificationManager,
+                                                             settingsController,
+                                                             heartRateController,
+                                                             motionController,
+                                                             filesystem);
 }
