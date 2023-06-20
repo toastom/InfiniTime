@@ -526,6 +526,9 @@ void DisplayApp::LoadScreen(Apps app, DisplayApp::FullRefreshDirections directio
     case Apps::Calendar:
       currentScreen = std::make_unique<Screens::Calendar>(this, batteryController,dateTimeController,bleController);
       break;
+    case Apps::Calendar:
+      currentScreen = std::make_unique<Screens::Calendar>(this, batteryController,dateTimeController,bleController);
+      break;
     case Apps::Paint:
       currentScreen = std::make_unique<Screens::InfiniPaint>(lvgl, motorController);
       break;
